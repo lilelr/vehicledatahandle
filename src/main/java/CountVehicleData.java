@@ -37,8 +37,8 @@ public class CountVehicleData {
         protected void setup(Context context) throws IOException, InterruptedException {
             super.setup(context);
             FileSystem hdfs = FileSystem.get(context.getConfiguration());
-            File tmpVehicleData = new File("/user/root/vehicletype/vehicletype.csv");
-            InputStream inputStream = hdfs.open(new Path("hdfs://10.2.9.42:9000/user/root/vehicletype/vehicletype.csv"));
+//            File tmpVehicleData = new File("/user/root/vehicletype/fourCatalog.csv");
+            InputStream inputStream = hdfs.open(new Path("hdfs://10.2.9.42:9000/user/root/vehicletype/fourCatalog.csv"));
 
 //            FileReader reader = new FileReader(tmpVehicleData);
             BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
@@ -46,14 +46,9 @@ public class CountVehicleData {
             while ((line = br.readLine()) != null) {
 //                System.out.println(line);
                 String[] lineItems = line.split(",");
-                if (lineItems.length == 4) {
+                if (lineItems.length == 3) {
                     String plateAndColor = lineItems[0] + "_" + lineItems[1];
-                    String vehicleType = "";
-                    if (lineItems[2].equals("999")) {
-                        vehicleType = lineItems[3];
-                    } else {
-                        vehicleType = lineItems[2];
-                    }
+                    String vehicleType = lineItems[2];
 
                     vehicleTypeMap.put(plateAndColor, vehicleType);
                 }
@@ -72,7 +67,7 @@ public class CountVehicleData {
 
 
         private int getTimePeriod(int hour, int minute) {
-            return (hour * 12) + (minute + 1) / 5+1;
+            return (hour * 12) + (minute + 1) / 5 + 1;
         }
 
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
@@ -99,7 +94,6 @@ public class CountVehicleData {
                     String tmpType = vehicleTypeMap.get(plateAndColor);
                     tripId = dateStr + "_" + timePeriod + "_" + tmpType;
 
-
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
@@ -119,8 +113,7 @@ public class CountVehicleData {
         private final Text left = new Text();
         private final Text right = new Text();
 
-        //        private static final Text SEPARATOR = new Text("------------------------------------------------");
-        //   output :<苏ED5683 , values>
+
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 //            context.write(SEPARATOR, null);
             left.set(key);
@@ -128,21 +121,36 @@ public class CountVehicleData {
             HashSet<String> plateSet = new HashSet<String>();
             for (Text val : values) {
                 String tmpPlate = val.toString();
-                if(!plateSet.contains(tmpPlate)) plateSet.add(tmpPlate);
+                if (!plateSet.contains(tmpPlate)) plateSet.add(tmpPlate);
                 count++;
             }
-            right.set(plateSet.size()+","+count);
+            right.set(plateSet.size() + "," + count);
             context.write(left, right);
 
 
         }
     }
 
-    private static boolean largerThanFiveMinute(Date d1, Date d2) {
-        if ((d1.getTime() - d2.getTime()) / 1000 > 5 * 60) {
-            return true;
+
+    /**
+     * 删除指定目录
+     *
+     * @param conf
+     * @param dirPath
+     * @throws IOException
+     */
+    private static void deleteDir(Configuration conf, String dirPath) throws IOException {
+        FileSystem fs = FileSystem.get(conf);
+        Path targetPath = new Path(dirPath);
+        if (fs.exists(targetPath)) {
+            boolean delResult = fs.delete(targetPath, true);
+            if (delResult) {
+                System.out.println(targetPath + " has been deleted sucessfullly. ok!");
+            } else {
+                System.out.println(targetPath + " deletion failed.");
+            }
         }
-        return false;
+
     }
 
     /**
@@ -167,6 +175,8 @@ public class CountVehicleData {
         // 实例化一道作业
         Job job = Job.getInstance(conf, "vehiletype");
         conf.set("mapred.textoutputformat.separator", ",");
+        //先删除输出目录
+        deleteDir(conf, args[3]);
         job.setJarByClass(CountVehicleData.class);
         // Mapper类型
         job.setMapperClass(Map.class);
