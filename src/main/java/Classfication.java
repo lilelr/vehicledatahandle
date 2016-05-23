@@ -303,7 +303,7 @@ public class Classfication {
         // 实例化一道作业
         Job job = Job.getInstance(conf, "vehiletype");
         conf.set("mapred.textoutputformat.separator", ",");
-        job.setJarByClass(Classfication.class);
+        job.setJarByClass(CountVehicleData.class);
         // Mapper类型
         job.setMapperClass(Map.class);
         // 不再需要Combiner类型，因为Combiner的输出类型<Text, IntWritable>对Reduce的输入类型<IntPair, IntWritable>不适用
