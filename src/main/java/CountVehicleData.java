@@ -165,6 +165,8 @@ public class CountVehicleData {
             return;
         }
         Configuration conf = new Configuration();
+        conf.set("mapred.textoutputformat.ignoreseparator", "true");
+        conf.set("mapred.textoutputformat.separator", ",");
 
 //        DistributedCache.createSymlink(conf);
 //        String vehcleTypeDataPath = "/user/root/vehicletype/vehicletype.csv";
@@ -203,13 +205,13 @@ public class CountVehicleData {
         job.setInputFormatClass(TextInputFormat.class);
         // 提供一个RecordWriter的实现，负责数据输出。
         job.setOutputFormatClass(TextOutputFormat.class);
-//        Path[] paths = FilesList.getList(conf, args[0], args[1], args[2]);
-//        // 输入hdfs路径
-//        for (Path path : paths) {
-//            FileInputFormat.addInputPath(job, path);
-//        }
-        Path path = new Path(args[1]);
-        FileInputFormat.addInputPath(job, path);
+        Path[] paths = FilesList.getList(conf, args[0], args[1], args[2]);
+        // 输入hdfs路径
+        for (Path path : paths) {
+            FileInputFormat.addInputPath(job, path);
+        }
+//        Path path = new Path(args[1]);
+//        FileInputFormat.addInputPath(job, path);
 
         // 输出hdfs路径
         FileOutputFormat.setOutputPath(job, new Path(args[3]));
