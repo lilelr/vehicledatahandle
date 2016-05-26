@@ -21,7 +21,7 @@ public class AlarmStatusTest {
             while ((line = bufferedReader.readLine()) != null) {
                 String[] lss = line.split(",");
                 if (lss.length >= 18) {
-                    int alarmField = Integer.valueOf(lss[17]);
+                    int alarmField = Integer.valueOf(lss[16]);
                     int bitIndex =0;
                     while (alarmField!=0){
                         if((alarmField&1) == 1){

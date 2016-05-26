@@ -7,51 +7,52 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-
 import java.io.IOException;
 
-
-/**
- * Created by yuxiao on 16/5/26.
- */
 public class AlarmStatusManageMent {
-
 
 
     public static class Map
             extends Mapper<LongWritable, Text, IntWritable, IntWritable> {
 
         private final static IntWritable one = new IntWritable(1);
-        private IntWritable alarmKey = new IntWritable();
+        private IntWritable mkey = new IntWritable();
 
-//        public   String printBits(int n){
-//            StringBuffer result = new StringBuffer();
-//            int temp = n;
-//            while(n!=0){
-//                temp =n%2;
-//                n =n/2;
-//                result.insert(0, temp);
-//            }
-//            return result.toString();
-//        }
-
+        /**
+         * @param key     行号
+         * @param value   每一行数据
+         * @param context 上下文
+         * @throws IOException
+         * @throws InterruptedException
+         */
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String line = value.toString();
             String[] lss = line.split(",");
             if (lss.length >= 18) {
-                int alarmField = Integer.valueOf(lss[17]);
-                int bitIndex =0;
-                while (alarmField!=0){
-                    if((alarmField&1) == 1){
-                        alarmKey.set(bitIndex);
-                        context.write(alarmKey,one);
+                // 报警位数据处理
+//                int alarmField = Integer.valueOf(lss[17]);
+//                int bitIndex =0;
+//                while (alarmField!=0){
+//                    if((alarmField&1) == 1){
+//                        mkey.set(bitIndex);
+//                        context.write(mkey,one);
+//                    }
+//                    alarmField >>= 1;
+//                    bitIndex++;
+//                }
+                // 状态位数据处理
+                int statusField = Integer.valueOf(lss[16]);
+                int bitIndex = 0;
+                while (statusField != 0) {
+                    if ((statusField & 1) == 1) {
+                        mkey.set(bitIndex);
+                        context.write(mkey, one);
                     }
-                    alarmField >>= 1;
+                    statusField >>= 1;
                     bitIndex++;
                 }
             }
@@ -62,6 +63,13 @@ public class AlarmStatusManageMent {
     public static class IntSumReducer extends Reducer<IntWritable, IntWritable, IntWritable, IntWritable> {
         private IntWritable result = new IntWritable();
 
+        /**
+         * @param key     报警位或状态位
+         * @param values  报警位或状态位为1的数据集合
+         * @param context 上下文
+         * @throws IOException
+         * @throws InterruptedException
+         */
         public void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
             int sum = 0;
             for (IntWritable val : values) {
@@ -76,8 +84,8 @@ public class AlarmStatusManageMent {
     /**
      * 删除指定目录
      *
-     * @param conf   hadoop configuration
-     * @param dirPath   待删除的输出目录
+     * @param conf    hadoop configuration
+     * @param dirPath 待删除的输出目录
      * @throws IOException
      */
     private static void deleteDir(Configuration conf, String dirPath) throws IOException {
@@ -94,6 +102,13 @@ public class AlarmStatusManageMent {
 
     }
 
+    /**
+     * @param args 共4个参数  args[0] hdfsURI 如hdfs://10.2.9.42:9000/
+     *             args[1] 输入文件目录 /lwlk_data/
+     *             args[2] 要处理的数据文件名   320000.data
+     *             args[3]  输出文件目录  /lwlk_data/20160526_statusTest/
+     * @throws Exception
+     */
     public static void main(String[] args) throws Exception {
         // 读取hadoop配置
         if (args.length < 4) {
@@ -110,7 +125,7 @@ public class AlarmStatusManageMent {
         //先删除输出目录
         deleteDir(conf, args[3]);
 
-        Job job = Job.getInstance(conf, "vehicle alarm ");
+        Job job = Job.getInstance(conf, "vehicle AlarmOrStatus ");
         job.setJarByClass(AlarmStatusManageMent.class);
         job.setMapperClass(AlarmStatusManageMent.Map.class);
         job.setReducerClass(AlarmStatusManageMent.IntSumReducer.class);
