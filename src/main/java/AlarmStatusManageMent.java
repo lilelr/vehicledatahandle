@@ -123,15 +123,15 @@ public class AlarmStatusManageMent {
         // rduce输出Value的类型
         job.setOutputValueClass(IntWritable.class);
 
-        job.setNumReduceTasks(24);
+        job.setNumReduceTasks(1);
 
-//        Path[] paths = FilesList.getList(conf, args[0], args[1], args[2]);
-        // 输入hdfs路径
-//        for (Path path : paths) {
-//            FileInputFormat.addInputPath(job, path);
-//        }
-        Path path = new Path(args[1]);
-        FileInputFormat.addInputPath(job, path);
+        Path[] paths = FilesList.getList(conf, args[0], args[1], args[2]);
+//         输入hdfs路径
+        for (Path path : paths) {
+            FileInputFormat.addInputPath(job, path);
+        }
+//        Path path = new Path(args[1]);
+//        FileInputFormat.addInputPath(job, path);
 
         // 输出hdfs路径
         FileOutputFormat.setOutputPath(job, new Path(args[3]));
