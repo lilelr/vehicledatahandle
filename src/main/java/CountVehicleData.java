@@ -67,7 +67,7 @@ public class CountVehicleData {
 
 
         private int getTimePeriod(int hour, int minute) {
-            return (hour * 12) + (minute + 1) / 5 + 1;
+            return (hour * 12) + (minute + 1) / 5;
         }
 
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
@@ -200,7 +200,7 @@ public class CountVehicleData {
         // rduce输出Value的类型
         job.setOutputValueClass(Text.class);
 
-        job.setNumReduceTasks(24);
+        job.setNumReduceTasks(1);
         // 将输入的数据集分割成小数据块splites，同时提供一个RecordReder的实现。
         job.setInputFormatClass(TextInputFormat.class);
         // 提供一个RecordWriter的实现，负责数据输出。
